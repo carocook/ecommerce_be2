@@ -1,8 +1,7 @@
 import { Router } from "express";
-
 import passport from "passport";
-
 import { generateToken } from "../utils/jwt.js";
+import UserCurrentDTO from "../dto/UserCurrentDTO.js";
 
 const router = Router();
 
@@ -35,6 +34,8 @@ router.post(
   async (req, res) => {
     const user = {
       id: req.user._id,
+      first_name: req.user.first_name,
+      last_name: req.user.last_name,
       email: req.user.email,
       role: req.user.role,
     };
@@ -62,9 +63,11 @@ router.get(
   }),
 
   (req, res) => {
+    const userDTO = new UserCurrentDTO(req.user);
+
     res.send({
       status: "success",
-      payload: req.user,
+      payload: userDTO,
     });
   },
 );
