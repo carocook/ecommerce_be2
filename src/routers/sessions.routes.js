@@ -4,6 +4,8 @@ import UserCurrentDTO from "../dto/UserCurrentDTO.js";
 import { sendRecoveryEmail } from "../services/MailService.js";
 import { UserModel } from "../model/userModel.js";
 import { generateToken, generateRecoveryToken } from "../utils/jwt.js";
+import jwt from "jsonwebtoken";
+import { createHash, isValidPassword } from "../utils/bcrypt.js";
 
 const router = Router();
 
@@ -123,20 +125,32 @@ router.post("/reset-password", async (req, res) => {
     const user = await UserModel.findOne({ email: data.email });
 
     if (!user) {
-      return res
-        .status(404)
-        .send({ status: "error", message: "Usuario no encontrado" });
+      return res.status(404).send({
+        status: "error",
+        message: "Usuario no encontrado",
+      });
+    }
+
+    if (isValidPassword(user, password)) {
+      return res.status(400).send({
+        status: "error",
+        message: "No podés usar la misma contraseña anterior",
+      });
     }
 
     user.password = createHash(password);
 
     await user.save();
 
-    res.send({ status: "success", message: "Contraseña actualizada" });
+    res.send({
+      status: "success",
+      message: "Contraseña actualizada",
+    });
   } catch (error) {
-    res
-      .status(400)
-      .send({ status: "error", message: "Token inválido o expirado" });
+    res.status(400).send({
+      status: "error",
+      message: "Token inválido o expirado",
+    });
   }
 });
 

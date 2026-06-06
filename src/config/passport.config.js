@@ -100,7 +100,13 @@ const initializePassport = () => {
 
       async (jwt_payload, done) => {
         try {
-          return done(null, jwt_payload);
+          const user = await UserModel.findById(jwt_payload.id);
+
+          if (!user) {
+            return done(null, false);
+          }
+
+          return done(null, user);
         } catch (error) {
           return done(error);
         }
