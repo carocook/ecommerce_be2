@@ -1,7 +1,9 @@
 import { Router } from "express";
 import passport from "passport";
-import { generateToken } from "../utils/jwt.js";
 import UserCurrentDTO from "../dto/UserCurrentDTO.js";
+import { sendRecoveryEmail } from "../services/MailService.js";
+import { UserModel } from "../model/userModel.js";
+import { generateToken, generateRecoveryToken } from "../utils/jwt.js";
 
 const router = Router();
 
@@ -79,6 +81,63 @@ router.get("/failregister", (req, res) => {
 
 router.get("/faillogin", (req, res) => {
   res.send({ error: "Login Failed" });
+});
+
+// FORGOT PASSWORD
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await UserModel.findOne({ email });
+
+    if (!user) {
+      return res.status(404).send({
+        status: "error",
+        message: "Usuario no encontrado",
+      });
+    }
+
+    const token = generateRecoveryToken(email);
+
+    await sendRecoveryEmail(email, token);
+
+    res.send({
+      status: "success",
+      message: "Correo de recuperación enviado",
+    });
+  } catch (error) {
+    res.status(500).send({
+      status: "error",
+      error: error.message,
+    });
+  }
+});
+
+// RESET PASSWORD
+router.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    const data = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
+
+    const user = await UserModel.findOne({ email: data.email });
+
+    if (!user) {
+      return res
+        .status(404)
+        .send({ status: "error", message: "Usuario no encontrado" });
+    }
+
+    user.password = createHash(password);
+
+    await user.save();
+
+    res.send({ status: "success", message: "Contraseña actualizada" });
+  } catch (error) {
+    res
+      .status(400)
+      .send({ status: "error", message: "Token inválido o expirado" });
+  }
 });
 
 export default router;

@@ -3,13 +3,16 @@ import { productModel } from "../model/productModel.js";
 import { uploader } from "../utils.js";
 import passport from "passport";
 import { authorization } from "../middlewares/authorization.middleware.js";
+import ProductsRepository from "../repositories/ProductsRepository.js";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
   try {
     const { category } = req.query;
-    const products = await productModel.find(category ? { category } : {});
+    const products = await ProductsRepository.getProducts(
+      category ? { category } : {},
+    );
     res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: "error al obtener los productos", error });
@@ -29,7 +32,7 @@ router.delete(
     try {
       const { pid } = req.params;
 
-      const deletedProduct = await productModel.findByIdAndDelete(pid);
+      const deletedProduct = await ProductsRepository.deleteProduct(pid);
 
       res.status(200).json({
         message: "producto borrado",
@@ -88,7 +91,7 @@ router.get("/stock", async (req, res) => {
 router.get("/:pid", async (req, res) => {
   try {
     const { pid } = req.params;
-    const product = await productModel.findById(pid);
+    const product = await ProductsRepository.getProductById(pid);
     res.status(200).json(product);
   } catch (error) {
     res.status(500).json({ message: "error al obtener el producto", error });
@@ -119,7 +122,7 @@ router.post(
         product.status = false;
       }
 
-      const newProduct = await productModel.create({
+      const newProduct = await ProductsRepository.createProduct({
         ...product,
         thumbnails: req.files?.map((file) => file.filename) || [],
       });
@@ -154,7 +157,10 @@ router.put(
 
       const { pid } = req.params;
 
-      const updatedProduct = await productModel.findByIdAndUpdate(pid, update);
+      const updatedProduct = await ProductsRepository.updateProduct(
+        pid,
+        update,
+      );
 
       res.status(200).json({
         message: "producto actualizado",

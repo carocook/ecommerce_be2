@@ -11,4 +11,8 @@ export const generateToken = (user) => {
   });
 };
 
+export const generateRecoveryToken = (email) => {
+  return jwt.sign({ email }, PRIVATE_KEY, { expiresIn: "1h" });
+};
+
 export default PRIVATE_KEY;
